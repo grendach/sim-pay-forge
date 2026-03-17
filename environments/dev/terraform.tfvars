@@ -1,6 +1,6 @@
 name                          = "sim-pay-forge"
 environment                   = "dev"
-region                        = "eu-west-1"
+region                        = "eu-central-1"
 
 allowed_client_cidrs          = ["0.0.0.0/0"]
 

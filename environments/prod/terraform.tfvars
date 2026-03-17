@@ -3,7 +3,7 @@
 # ========================================
 name                  = "sim-pay-forge"
 environment           = "prod"
-region                = "eu-central-1"
+region                = "eu-west-1"
 
 # SECURITY: FINITE IP LIST REQUIRED FOR AUDIT
 allowed_client_cidrs  = [
