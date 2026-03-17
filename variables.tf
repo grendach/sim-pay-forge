@@ -57,13 +57,13 @@ variable "db_port" {
 # CERTIFICATE AUTOMATION
 variable "certificate_domain_name" {
   type        = string
-  default     = "simpayforge.app"
+  default     = "simpayforge.grendach.dev"
   description = "Primary domain for ACM cert"
 }
 
 variable "certificate_sans" {
   type        = list(string)
-  default     = ["*.simpayforge.app"]
+  default     = ["*.simpayforge.grendach.dev"]
   description = "Subject Alternative Names"
 }
 

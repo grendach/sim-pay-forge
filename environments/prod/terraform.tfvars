@@ -3,7 +3,7 @@
 # ========================================
 name                  = "sim-pay-forge"
 environment           = "prod"
-region                = "eu-central-1"
+region                = "eu-west-1"
 
 # SECURITY: FINITE IP LIST REQUIRED FOR AUDIT
 allowed_client_cidrs  = [
@@ -21,5 +21,5 @@ db_instance_type      = "t3.medium"
 
 # Production ACM Certificate
 certificate_validation_method = "DNS"    # Production standard
-create_dns_validation_records = true      # Auto Route53 records
-route53_zone_id               = "Z1234567890ABC"  # Your Route53 zone
+create_dns_validation_records = false      # Auto Route53 records
+certificate_domain_name       = "altm-prod.grendach.dev" 

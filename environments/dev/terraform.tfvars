@@ -14,4 +14,4 @@ db_instance_type              = "t3.micro"
 # ACM Certificate (manual DNS validation)
 certificate_validation_method = "DNS"
 create_dns_validation_records = false
-certificate_domain_name       = "dev.grendach.dev"
+certificate_domain_name       = "altm-dev.grendach.dev"
