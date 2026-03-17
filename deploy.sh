@@ -31,15 +31,15 @@ fi
 echo "🚀 $ACTION-ing environment: $ENV"
 
 # Terraform init with backend
-terraform init -backend-config="environments/$ENV/backend.hcl"
+terraform init -backend-config="environments/${ENV}/backend.hcl"
 
-# Plan first
+# Plan & apply/destroy
 if [[ "$ACTION" == "apply" ]]; then
-  terraform plan -var-file="environments/$ENV/terraform.tfvars"
-  terraform apply -var-file="environments/$ENV/terraform.tfvars"
-elif [[ "$ACTION" == "destroy" ]]; then
-  terraform plan -destroy -var-file="environments/$ENV/terraform.tfvars"
-  terraform destroy -var-file="environments/$ENV/terraform.tfvars"
+  terraform plan -var-file="environments/${ENV}/terraform.tfvars"
+  terraform apply -var-file="environments/${ENV}/terraform.tfvars"
+else
+  terraform plan -destroy -var-file="environments/${ENV}/terraform.tfvars"
+  terraform destroy -var-file="environments/${ENV}/terraform.tfvars"
 fi
 
 echo "✅ $ACTION completed for environment: $ENV"
