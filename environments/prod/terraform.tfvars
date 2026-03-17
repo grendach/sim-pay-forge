@@ -22,4 +22,6 @@ db_instance_type      = "t3.medium"
 # Production ACM Certificate
 certificate_validation_method = "DNS"    # Production standard
 create_dns_validation_records = false      # Auto Route53 records
-certificate_domain_name       = "altm-prod.grendach.dev" 
+certificate_domain_name       = "altm-prod.grendach.dev"
+certificate_sans              = ["*.altm-prod.grendach.dev"]
+

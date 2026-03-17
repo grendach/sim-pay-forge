@@ -15,7 +15,6 @@ variable "environment" {
 
 variable "region" {
   type        = string
-  default     = "eu-central-1"  # Wrocław optimal
 }
 
 # SECURITY: Finite IP list for audit compliance
@@ -33,12 +32,10 @@ variable "db_ami_id" {
 
 variable "app_instance_type" {
   type        = string
-  default     = "t3.micro"
 }
 
 variable "db_instance_type" {
   type        = string
-  default     = "t3.small"
 }
 
 # Service ports
@@ -57,13 +54,11 @@ variable "db_port" {
 # CERTIFICATE AUTOMATION
 variable "certificate_domain_name" {
   type        = string
-  default     = "simpayforge.grendach.dev"
   description = "Primary domain for ACM cert"
 }
 
 variable "certificate_sans" {
   type        = list(string)
-  default     = ["*.simpayforge.grendach.dev"]
   description = "Subject Alternative Names"
 }
 

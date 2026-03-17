@@ -15,3 +15,4 @@ db_instance_type              = "t3.micro"
 certificate_validation_method = "DNS"
 create_dns_validation_records = false
 certificate_domain_name       = "altm-dev.grendach.dev"
+certificate_sans = ["*.altm-dev.grendach.dev"]
