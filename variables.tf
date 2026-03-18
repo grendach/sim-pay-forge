@@ -15,7 +15,7 @@ variable "environment" {
 
 variable "region" {
   type        = string
-  default     = "eu-central-1"  # Wrocław optimal
+  default     = "eu-west-1"  # Wrocław optimal
 }
 
 # SECURITY: Finite IP list for audit compliance

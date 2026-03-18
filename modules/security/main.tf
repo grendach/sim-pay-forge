@@ -3,25 +3,29 @@ resource "aws_security_group" "alb" {
   description = "ALB security group"
   vpc_id      = var.vpc_id
 
+  # Ingress: ALB ports accessible from allowed clients + your IP
   ingress {
-    description = "HTTPS from allowed clients"
+    from_port   = 80
+    to_port     = 80
+    protocol    = "tcp"
+    cidr_blocks = concat(var.allowed_client_cidrs)
+  }
+
+  ingress {
     from_port   = 443
     to_port     = 443
     protocol    = "tcp"
-    cidr_blocks = var.allowed_client_cidrs
+    cidr_blocks = concat(var.allowed_client_cidrs)
   }
 
   egress {
-    description = "Allow outbound traffic"
     from_port   = 0
     to_port     = 0
     protocol    = "-1"
     cidr_blocks = ["0.0.0.0/0"]
-}
-
-  tags = {
-    Name = "${var.name}-alb-sg"
   }
+
+  tags = { Name = "${var.name}-alb-sg" }
 }
 
 resource "aws_security_group" "app" {
@@ -30,24 +34,20 @@ resource "aws_security_group" "app" {
   vpc_id      = var.vpc_id
 
   ingress {
-    description     = "HTTP from ALB"
     from_port       = var.app_port
     to_port         = var.app_port
     protocol        = "tcp"
     security_groups = [aws_security_group.alb.id]
-    }
+  }
 
   egress {
-    description = "HTTPS to secureweb.com and package repo"
     from_port   = 443
     to_port     = 443
     protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-    }
+    cidr_blocks = ["0.0.0.0/0"] # For communication to secureweb.com
+  }
 
-  tags = {
-    Name = "${var.name}-app-sg"
-    }
+  tags = { Name = "${var.name}-app-sg" }
 }
 
 resource "aws_security_group" "db" {
@@ -56,14 +56,18 @@ resource "aws_security_group" "db" {
   vpc_id      = var.vpc_id
 
   ingress {
-    description     = "MySQL from app"
     from_port       = var.db_port
     to_port         = var.db_port
     protocol        = "tcp"
     security_groups = [aws_security_group.app.id]
   }
 
-  tags = {
-    Name = "${var.name}-db-sg"
+  egress {
+    from_port   = 443
+    to_port     = 443
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
   }
+
+  tags = { Name = "${var.name}-db-sg" }
 }

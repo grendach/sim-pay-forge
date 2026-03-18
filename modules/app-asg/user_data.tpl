@@ -1,20 +1,36 @@
+
+# #!/bin/bash
+# set -e
+
+# echo "Installing required package..."
+
+# # Example install (replace with real package)
+# yum update -y
+# yum install -y curl
+
+# # Simulate dependency from example.com
+# curl -f https://example.com/package.rpm -o /tmp/package.rpm
+
+# if [ $? -ne 0 ]; then
+#   echo "Package download failed. Exiting."
+#   exit 1
+# fi
+
+# rpm -ivh /tmp/package.rpm
+
+# echo "Starting application..."
+# # systemctl start your-app
+
 #!/bin/bash
-yum update -y
-yum install -y httpd
+# Install nginx if not present
+if ! rpm -q nginx; then
+  amazon-linux-extras enable nginx1
+  yum install -y nginx
+fi
 
-cat <<EOF > /var/www/html/index.html
-<!DOCTYPE html>
-<html>
-<head><title>SimPayForge</title></head>
-<body>
-<h1>🛒 Payment Provider Active</h1>
-<p>Audit-ready infrastructure deployed!</p>
-</body>
-</html>
-EOF
+# Start nginx
+systemctl enable nginx
+systemctl start nginx
 
-systemctl enable httpd
-systemctl start httpd
-
-# Health check endpoint
-curl -f "http://localhost:${app_port}" || echo "Health check failed"
+# Simple HTML for testing
+echo "<h1>POC nginx on $(hostname)</h1>" > /usr/share/nginx/html/index.html
