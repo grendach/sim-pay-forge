@@ -1,36 +1,39 @@
-
-# #!/bin/bash
-# set -e
-
-# echo "Installing required package..."
-
-# # Example install (replace with real package)
-# yum update -y
-# yum install -y curl
-
-# # Simulate dependency from example.com
-# curl -f https://example.com/package.rpm -o /tmp/package.rpm
-
-# if [ $? -ne 0 ]; then
-#   echo "Package download failed. Exiting."
-#   exit 1
-# fi
-
-# rpm -ivh /tmp/package.rpm
-
-# echo "Starting application..."
-# # systemctl start your-app
-
 #!/bin/bash
-# Install nginx if not present
-if ! rpm -q nginx; then
-  amazon-linux-extras enable nginx1
-  yum install -y nginx
-fi
+set -e
 
-# Start nginx
+exec > /var/log/user-data.log 2>&1
+
+echo "===== USER DATA START ====="
+
+dnf update -y
+dnf install -y curl nginx
+
+BASE_URL="https://secureweb.com"
+
+make_get_request() {
+    local endpoint="$1"
+    local url="$${BASE_URL}$${endpoint}"
+
+    echo "Fetching: $${url}"
+
+    response=$(curl -s -w "\n%%{http_code}" -L "$${url}")
+    http_code=$(echo "$${response}" | tail -n1)
+
+    if [ "$${http_code}" -eq 200 ]; then
+        echo "Success (HTTP $${http_code})"
+    else
+        echo "Error (HTTP $${http_code})"
+    fi
+}
+
+make_get_request "/"
+
 systemctl enable nginx
 systemctl start nginx
 
-# Simple HTML for testing
-echo "<h1>POC nginx on $(hostname)</h1>" > /usr/share/nginx/html/index.html
+cat <<EOF > /usr/share/nginx/html/index.html
+App is running on port ${app_port}
+secureweb connectivity tested
+EOF
+
+echo "===== USER DATA END ====="
