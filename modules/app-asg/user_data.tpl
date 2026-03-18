@@ -1,39 +1,27 @@
 #!/bin/bash
 set -e
 
-exec > /var/log/user-data.log 2>&1
-
-echo "===== USER DATA START ====="
-
+# Update system
 dnf update -y
-dnf install -y curl nginx
 
-BASE_URL="https://secureweb.com"
+# Install nginx using dnf module
+dnf module enable -y nginx:1.20
+dnf install -y nginx
 
-make_get_request() {
-    local endpoint="$1"
-    local url="$${BASE_URL}$${endpoint}"
-
-    echo "Fetching: $${url}"
-
-    response=$(curl -s -w "\n%%{http_code}" -L "$${url}")
-    http_code=$(echo "$${response}" | tail -n1)
-
-    if [ "$${http_code}" -eq 200 ]; then
-        echo "Success (HTTP $${http_code})"
-    else
-        echo "Error (HTTP $${http_code})"
-    fi
-}
-
-make_get_request "/"
-
+# Enable and start nginx
 systemctl enable nginx
 systemctl start nginx
 
-cat <<EOF > /usr/share/nginx/html/index.html
-App is running on port ${app_port}
-secureweb connectivity tested
-EOF
+# Create simple index page for testing ALB health check
+echo "<h1>POC nginx on $(hostname)</h1>" > /usr/share/nginx/html/index.html
 
-echo "===== USER DATA END ====="
+# Communicate with secureweb.com over HTTPS
+BASE_URL="https://secureweb.com"
+response=$(curl -s -o /dev/null -w "%%{http_code}" "$BASE_URL")
+if [ "$response" -ne 200 ]; then
+    echo "Error connecting to $BASE_URL (HTTP $response)"
+    exit 1
+fi
+
+# Wait a bit to ensure ALB health check sees the server ready
+sleep 30
