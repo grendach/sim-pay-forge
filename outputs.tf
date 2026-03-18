@@ -13,22 +13,17 @@ output "alb_https_url" {
 }
 
 # ========================================
-# NETWORKING
+# NETWORKING (DEFAULT VPC)
 # ========================================
 
 output "vpc_id" {
-  description = "VPC ID"
-  value       = module.vpc.vpc_id
+  description = "Default VPC ID"
+  value       = data.aws_vpc.default.id
 }
 
-output "public_subnet_ids" {
-  description = "Public subnet IDs (used by ALB)"
-  value       = module.vpc.public_subnet_ids
-}
-
-output "private_subnet_ids" {
-  description = "Private subnet IDs (used by ASG + DB)"
-  value       = module.vpc.private_subnet_ids
+output "subnet_ids" {
+  description = "Subnets used (ALB + ASG + DB)"
+  value       = data.aws_subnets.default.ids
 }
 
 # ========================================
@@ -59,7 +54,6 @@ output "certificate_arn" {
   value       = module.acm_certificate.certificate_arn
 }
 
-# Cloudflare → usually empty, but keep safe
 output "certificate_validation_records" {
   description = "DNS validation records (if DNS method)"
   value       = try(module.acm_certificate.validation_records, {})
@@ -87,8 +81,7 @@ output "deployed_resources_summary" {
   description = "Summary of deployed resources"
   value = {
     vpc             = 1
-    subnets_public  = length(module.vpc.public_subnet_ids)
-    subnets_private = length(module.vpc.private_subnet_ids)
+    subnets_total   = length(data.aws_subnets.default.ids)
     alb             = 1
     asg             = 1
     db_instance     = 1
