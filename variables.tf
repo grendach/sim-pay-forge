@@ -15,7 +15,7 @@ variable "environment" {
 
 variable "region" {
   type        = string
-  default     = "eu-central-1"  # Wrocław optimal
+  default     = "eu-west-1"  # Wrocław optimal
 }
 
 # SECURITY: Finite IP list for audit compliance
@@ -57,13 +57,11 @@ variable "db_port" {
 # CERTIFICATE AUTOMATION
 variable "certificate_domain_name" {
   type        = string
-  default     = "simpayforge.grendach.dev"
   description = "Primary domain for ACM cert"
 }
 
 variable "certificate_sans" {
   type        = list(string)
-  default     = ["*.simpayforge.grendach.dev"]
   description = "Subject Alternative Names"
 }
 

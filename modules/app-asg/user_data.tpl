@@ -1,20 +1,43 @@
 #!/bin/bash
-yum update -y
-yum install -y httpd
+set -e
 
-cat <<EOF > /var/www/html/index.html
-<!DOCTYPE html>
-<html>
-<head><title>SimPayForge</title></head>
-<body>
-<h1>🛒 Payment Provider Active</h1>
-<p>Audit-ready infrastructure deployed!</p>
-</body>
-</html>
-EOF
+# Redirect stdout and stderr to a log file
+exec > /var/log/user-data.log 2>&1
 
-systemctl enable httpd
-systemctl start httpd
+echo "===== Starting user-data script ====="
+date
 
-# Health check endpoint
-curl -f "http://localhost:${app_port}" || echo "Health check failed"
+# Update system
+echo "Updating system..."
+dnf update -y
+
+# Install nginx directly (Amazon Linux 2023)
+echo "Installing nginx..."
+dnf install -y nginx
+
+# Enable and start nginx
+echo "Enabling and starting nginx service..."
+systemctl enable nginx
+systemctl start nginx
+
+# Create simple index page for ALB health check
+echo "Creating test HTML page..."
+echo "<h1>POC nginx on $(hostname)</h1>" > /usr/share/nginx/html/index.html
+
+# Test HTTPS connection to secureweb.com
+BASE_URL="https://secureweb.com"
+echo "Testing HTTPS connection to $BASE_URL..."
+response=$(curl -s -o /dev/null -w "%%{http_code}" "$BASE_URL")
+if [ "$response" -ne 200 ]; then
+    echo "❌ Error connecting to $BASE_URL (HTTP $response)"
+    exit 1
+else
+    echo "✅ Successfully connected to $BASE_URL (HTTP $response)"
+fi
+
+# Give some time for ALB health check to see the service
+echo "Waiting 30s for ALB health checks..."
+sleep 30
+
+echo "===== User-data script completed successfully ====="
+date

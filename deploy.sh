@@ -3,24 +3,12 @@
 set -euo pipefail
 
 # -------------------------------
-# Usage: ./deploy.sh <env> <action>
-# <env>    = dev | prod
+# Usage: ./deploy.sh <action>
 # <action> = apply | destroy
 # -------------------------------
 
-ENV=${1:-}
-ACTION=${2:-apply}  # default action is apply
-
-# Validate environment
-if [[ -z "$ENV" ]]; then
-  echo "❌ Usage: ./deploy.sh <env> [apply|destroy]"
-  exit 1
-fi
-
-if [[ "$ENV" != "dev" && "$ENV" != "prod" ]]; then
-  echo "❌ Invalid environment: $ENV (must be dev or prod)"
-  exit 1
-fi
+ENV="dev"
+ACTION=${1:-apply}  # default action is apply
 
 # Validate action
 if [[ "$ACTION" != "apply" && "$ACTION" != "destroy" ]]; then
