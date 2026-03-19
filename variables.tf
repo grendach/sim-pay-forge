@@ -54,6 +54,12 @@ variable "db_port" {
   description = "Database port"
 }
 
+variable "mysql_root_password" {
+  type        = string
+  description = "MySQL root password for DB instance bootstrap"
+  sensitive   = true
+}
+
 # CERTIFICATE AUTOMATION
 variable "certificate_domain_name" {
   type        = string

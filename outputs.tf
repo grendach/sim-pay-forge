@@ -23,7 +23,7 @@ output "vpc_id" {
 
 output "subnet_ids" {
   description = "Subnets used (ALB + ASG + DB)"
-  value       = data.aws_subnets.default.ids
+  value       = data.aws_subnets.public.ids
 }
 
 # ========================================
@@ -68,9 +68,9 @@ output "app_asg_name" {
   value       = module.app_asg.asg_name
 }
 
-output "db_instance_id" {
-  description = "Database instance ID"
-  value       = module.db_ec2.db_instance_id
+output "db_asg_name" {
+  description = "Database ASG name"
+  value       = module.db_asg.db_asg_name
 }
 
 # ========================================
@@ -81,7 +81,7 @@ output "deployed_resources_summary" {
   description = "Summary of deployed resources"
   value = {
     vpc             = 1
-    subnets_total   = length(data.aws_subnets.default.ids)
+    subnets_total   = length(data.aws_subnets.public.ids)
     alb             = 1
     asg             = 1
     db_instance     = 1

@@ -22,7 +22,10 @@ systemctl start nginx
 
 # Create simple index page for ALB health check
 echo "Creating test HTML page..."
-echo "<h1>POC nginx on $(hostname)</h1>" > /usr/share/nginx/html/index.html
+cat <<EOF > /usr/share/nginx/html/index.html
+<h1>Running nginx on $(hostname)</h1>
+<p>I want to be a part of your team :)</p>
+EOF
 
 # Test HTTPS connection to secureweb.com
 BASE_URL="https://secureweb.com"
