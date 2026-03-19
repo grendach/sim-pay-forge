@@ -53,10 +53,24 @@ systemctl enable mysqld
 systemctl start mysqld
 
 # Set root password and secure installation
-MYSQL_ROOT_PASSWORD="$${NEW_PASS}"   # Pass this from Terraform var
+MYSQL_ROOT_PASSWORD="${mysql_root_password}"
 
-mysql --connect-expired-password -uroot <<MYSQL_SECURE
-ALTER USER 'root'@'localhost' IDENTIFIED BY '$${NEW_PASS}';
+MYSQL_TEMP_PASSWORD=""
+for i in {1..10}; do
+	MYSQL_TEMP_PASSWORD=$(grep 'temporary password' /var/log/mysqld.log | tail -1 | awk '{print $NF}')
+	if [ -n "$MYSQL_TEMP_PASSWORD" ]; then
+		break
+	fi
+	sleep 2
+done
+
+if [ -z "$MYSQL_TEMP_PASSWORD" ]; then
+	echo "ERROR: Could not find temporary MySQL root password in /var/log/mysqld.log"
+	exit 1
+fi
+
+mysql --connect-expired-password -uroot -p"$MYSQL_TEMP_PASSWORD" <<MYSQL_SECURE
+ALTER USER 'root'@'localhost' IDENTIFIED BY '$${MYSQL_ROOT_PASSWORD}';
 DELETE FROM mysql.user WHERE User='';
 DROP DATABASE IF EXISTS test;
 FLUSH PRIVILEGES;
@@ -65,4 +79,4 @@ MYSQL_SECURE
 echo "===== MYSQL SETUP COMPLETE ====="
 
 # Optional: test MySQL
-mysqladmin -uroot -p"$${NEW_PASS}" ping
+mysqladmin -uroot -p"$${MYSQL_ROOT_PASSWORD}" ping

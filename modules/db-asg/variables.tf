@@ -18,3 +18,8 @@ variable "instance_type" {
   type    = string
   default = "t3.small"
 }
+
+variable "mysql_root_password" {
+  type      = string
+  sensitive = true
+}

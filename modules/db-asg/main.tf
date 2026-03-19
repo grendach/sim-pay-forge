@@ -13,7 +13,9 @@ resource "aws_launch_template" "this" {
 
   vpc_security_group_ids = [var.db_sg_id]
 
-  user_data = base64encode(templatefile("${path.module}/user_data.tpl", {}))
+  user_data = base64encode(templatefile("${path.module}/user_data.tpl", {
+    mysql_root_password = var.mysql_root_password
+  }))
 
   tag_specifications {
     resource_type = "instance"

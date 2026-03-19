@@ -97,4 +97,5 @@ module "db_asg" {
   db_sg_id      = module.security.db_sg_id
   instance_type = var.db_instance_type
   db_ami_id     =  var.db_ami_id
+  mysql_root_password = var.mysql_root_password
 }
