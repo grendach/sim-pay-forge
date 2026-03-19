@@ -15,21 +15,5 @@ resource "aws_instance" "this" {
     Name = "${var.name}-db"
   }
 
-  user_data = base64encode(<<-EOF
-    #!/bin/bash
-    yum update -y
-    yum install -y mysql-server
-    systemctl enable mysqld
-    systemctl start mysqld
-    mysql_secure_installation <<SECURE
-    y
-    rootpass
-    rootpass
-    y
-    y
-    y
-    y
-    SECURE
-  EOF
-  )
+  user_data = base64encode(templatefile("${path.module}/user_data.tpl"))
 }
