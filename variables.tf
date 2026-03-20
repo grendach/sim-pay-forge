@@ -29,6 +29,7 @@ variable "allowed_client_cidrs" {
 variable "db_ami_id" {
   type        = string
   description = "Database AMI ID"
+  default     = ""
 }
 
 variable "app_instance_type" {

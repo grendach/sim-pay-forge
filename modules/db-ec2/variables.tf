@@ -11,7 +11,8 @@ variable "db_sg_id" {
 }
 
 variable "db_ami_id" {
-  type = string
+  type    = string
+  default = ""
 }
 
 variable "instance_type" {

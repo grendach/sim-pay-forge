@@ -68,9 +68,14 @@ output "app_asg_name" {
   value       = module.app_asg.asg_name
 }
 
-output "db_asg_name" {
-  description = "Database ASG name"
-  value       = module.db_asg.db_asg_name
+output "db_instance_id" {
+  description = "Database EC2 instance ID"
+  value       = module.db_ec2.db_instance_id
+}
+
+output "db_private_ip" {
+  description = "Database EC2 private IP"
+  value       = module.db_ec2.db_private_ip
 }
 
 # ========================================

@@ -5,7 +5,7 @@ region                        = "eu-central-1"
 allowed_client_cidrs          = ["0.0.0.0/0"]
 
 # AMIs
-db_ami_id                     = "ami-0c02fb55956c7d316"
+# Leave db_ami_id unset to use the latest Amazon Linux 2023 AMI from AWS SSM for the selected region.
 mysql_root_password           = "ChangeMe123!"
 
 # Sizing

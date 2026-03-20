@@ -89,8 +89,8 @@ module "app_asg" {
 # DATABASE EC2 (MYSQL)
 # ========================================
 
-module "db_asg" {
-  source        = "./modules/db-asg"
+module "db_ec2" {
+  source        = "./modules/db-ec2"
   name          = local.name_prefix
   subnet_id     = data.aws_subnets.public.ids[0]
 
