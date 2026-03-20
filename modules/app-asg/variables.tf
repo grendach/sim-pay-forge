@@ -14,6 +14,11 @@ variable "app_sg_id" {
   type = string
 }
 
+variable "associate_public_ip" {
+  type    = bool
+  default = false
+}
+
 
 variable "instance_type" {
   type    = string
@@ -27,4 +32,12 @@ variable "alb_tg_arn" {
 variable "app_port" {
   type    = number
   default = 80
+}
+
+variable "required_package_repo_baseurl" {
+  type = string
+}
+
+variable "required_package_name" {
+  type = string
 }

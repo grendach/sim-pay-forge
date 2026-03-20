@@ -10,8 +10,14 @@ variable "db_sg_id" {
   type = string
 }
 
+variable "associate_public_ip" {
+  type    = bool
+  default = false
+}
+
 variable "db_ami_id" {
-  type = string
+  type    = string
+  default = ""
 }
 
 variable "instance_type" {

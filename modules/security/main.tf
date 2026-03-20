@@ -6,19 +6,19 @@ resource "aws_security_group" "alb" {
   description = "ALB security group"
   vpc_id      = var.vpc_id
 
-  # Ingress from allowed clients + your public IP
+  # Ingress from allowed clients
   ingress {
     from_port   = 80
     to_port     = 80
     protocol    = "tcp"
-    cidr_blocks = concat(var.allowed_client_cidrs, ["185.72.187.163/32"])
+    cidr_blocks = var.allowed_client_cidrs
   }
 
   ingress {
     from_port   = 443
     to_port     = 443
     protocol    = "tcp"
-    cidr_blocks = concat(var.allowed_client_cidrs, ["185.72.187.163/32"])
+    cidr_blocks = var.allowed_client_cidrs
   }
 
   # Outbound traffic: default allow all

@@ -21,7 +21,8 @@ variable "region" {
 # SECURITY: Finite IP list for audit compliance
 variable "allowed_client_cidrs" {
   type        = list(string)
-  description = "Client IPs allowed to ALB HTTPS:443"
+  description = "Client IPs allowed to ALB ingress (80/443); override in tfvars as needed"
+  default     = ["0.0.0.0/0"]
 }
 
 # Instance configuration
@@ -29,11 +30,24 @@ variable "allowed_client_cidrs" {
 variable "db_ami_id" {
   type        = string
   description = "Database AMI ID"
+  default     = ""
 }
 
 variable "app_instance_type" {
   type        = string
   default     = "t3.micro"
+}
+
+variable "required_package_repo_baseurl" {
+  type        = string
+  description = "URL used to bootstrap the external repository that provides the required app dependency"
+  default     = "https://download.docker.com/linux/centos/docker-ce.repo"
+}
+
+variable "required_package_name" {
+  type        = string
+  description = "Package that must be installed before the application starts"
+  default     = "docker-ce"
 }
 
 variable "db_instance_type" {

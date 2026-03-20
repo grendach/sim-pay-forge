@@ -2,10 +2,14 @@ name                          = "sim-pay-forge"
 environment                   = "dev"
 region                        = "eu-central-1"
 
-allowed_client_cidrs          = ["0.0.0.0/0"]
+# Default open ingress for POC. Multiple CIDR blocks are supported here.
+allowed_client_cidrs = [
+  "0.0.0.0/0",
+  # "185.72.187.163/32",
+]
 
 # AMIs
-db_ami_id                     = "ami-0c02fb55956c7d316"
+# Leave db_ami_id unset to use the latest Amazon Linux 2023 AMI from AWS SSM for the selected region.
 mysql_root_password           = "ChangeMe123!"
 
 # Sizing

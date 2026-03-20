@@ -21,9 +21,19 @@ output "vpc_id" {
   value       = data.aws_vpc.default.id
 }
 
-output "subnet_ids" {
-  description = "Subnets used (ALB + ASG + DB)"
-  value       = data.aws_subnets.public.ids
+output "alb_subnet_ids" {
+  description = "Three selected public subnets used by ALB"
+  value       = local.selected_public_subnet_ids
+}
+
+output "workload_subnet_ids" {
+  description = "Effective subnets used by app ASG and DB EC2 (private preferred, public fallback)"
+  value       = local.selected_workload_subnet_ids
+}
+
+output "workload_network_mode" {
+  description = "Whether workloads are deployed into private subnets or fallback public subnets"
+  value       = local.has_private_subnets ? "private" : "public-fallback"
 }
 
 # ========================================
@@ -68,9 +78,14 @@ output "app_asg_name" {
   value       = module.app_asg.asg_name
 }
 
-output "db_asg_name" {
-  description = "Database ASG name"
-  value       = module.db_asg.db_asg_name
+output "db_instance_id" {
+  description = "Database EC2 instance ID"
+  value       = module.db_ec2.db_instance_id
+}
+
+output "db_private_ip" {
+  description = "Database EC2 private IP"
+  value       = module.db_ec2.db_private_ip
 }
 
 # ========================================
@@ -81,7 +96,8 @@ output "deployed_resources_summary" {
   description = "Summary of deployed resources"
   value = {
     vpc             = 1
-    subnets_total   = length(data.aws_subnets.public.ids)
+    alb_subnets     = length(local.selected_public_subnet_ids)
+    workload_subnets = length(local.selected_workload_subnet_ids)
     alb             = 1
     asg             = 1
     db_instance     = 1
