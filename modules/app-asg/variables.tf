@@ -14,6 +14,11 @@ variable "app_sg_id" {
   type = string
 }
 
+variable "associate_public_ip" {
+  type    = bool
+  default = false
+}
+
 
 variable "instance_type" {
   type    = string

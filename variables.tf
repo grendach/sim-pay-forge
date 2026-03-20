@@ -21,7 +21,8 @@ variable "region" {
 # SECURITY: Finite IP list for audit compliance
 variable "allowed_client_cidrs" {
   type        = list(string)
-  description = "Client IPs allowed to ALB HTTPS:443"
+  description = "Client IPs allowed to ALB ingress (80/443); override in tfvars as needed"
+  default     = ["0.0.0.0/0"]
 }
 
 # Instance configuration

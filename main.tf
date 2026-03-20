@@ -24,6 +24,26 @@ data "aws_subnets" "public" {
   }
 }
 
+# Private subnets in default VPC, if any exist.
+data "aws_subnets" "private" {
+  filter {
+    name   = "vpc-id"
+    values = [data.aws_vpc.default.id]
+  }
+
+  filter {
+    name   = "map-public-ip-on-launch"
+    values = ["false"]
+  }
+}
+
+check "default_vpc_has_at_least_three_public_subnets" {
+  assert {
+    condition     = length(data.aws_subnets.public.ids) >= 3
+    error_message = "Default VPC must have at least 3 public subnets for this POC."
+  }
+}
+
 # ========================================
 # SECURITY GROUPS
 # ========================================
@@ -60,7 +80,7 @@ module "alb" {
   source             = "./modules/alb"
   name               = local.name_prefix
   vpc_id             = data.aws_vpc.default.id
-  public_subnet_ids  = data.aws_subnets.public.ids
+  public_subnet_ids  = local.selected_public_subnet_ids
   alb_sg_id          = module.security.alb_sg_id
   target_group_port  = var.app_port
   certificate_arn    = module.acm_certificate.certificate_arn
@@ -76,8 +96,9 @@ module "app_asg" {
   name               = local.name_prefix
   vpc_id             = data.aws_vpc.default.id
 
-  # For POC → use public subnets (ensures internet access)
-  private_subnet_ids = data.aws_subnets.public.ids
+  # Prefer private subnets for workloads; fallback to selected public subnets when default VPC has none.
+  private_subnet_ids  = local.selected_workload_subnet_ids
+  associate_public_ip = local.workload_associate_public_ip
 
   app_sg_id          = module.security.app_sg_id
   instance_type      = var.app_instance_type
@@ -94,7 +115,8 @@ module "app_asg" {
 module "db_ec2" {
   source        = "./modules/db-ec2"
   name          = local.name_prefix
-  subnet_id     = data.aws_subnets.public.ids[0]
+  subnet_id     = local.selected_workload_subnet_ids[0]
+  associate_public_ip = local.workload_associate_public_ip
 
   db_sg_id      = module.security.db_sg_id
   instance_type = var.db_instance_type
