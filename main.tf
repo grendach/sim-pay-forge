@@ -83,6 +83,8 @@ module "app_asg" {
   instance_type      = var.app_instance_type
   alb_tg_arn         = module.alb.target_group_arn
   app_port           = var.app_port
+  required_package_repo_baseurl = var.required_package_repo_baseurl
+  required_package_name         = var.required_package_name
 }
 
 # ========================================

@@ -37,6 +37,18 @@ variable "app_instance_type" {
   default     = "t3.micro"
 }
 
+variable "required_package_repo_baseurl" {
+  type        = string
+  description = "URL used to bootstrap the external repository that provides the required app dependency"
+  default     = "https://download.docker.com/linux/centos/docker-ce.repo"
+}
+
+variable "required_package_name" {
+  type        = string
+  description = "Package that must be installed before the application starts"
+  default     = "docker-ce"
+}
+
 variable "db_instance_type" {
   type        = string
   default     = "t3.small"

@@ -28,3 +28,11 @@ variable "app_port" {
   type    = number
   default = 80
 }
+
+variable "required_package_repo_baseurl" {
+  type = string
+}
+
+variable "required_package_name" {
+  type = string
+}

@@ -8,7 +8,9 @@ resource "aws_launch_template" "this" {
   vpc_security_group_ids = [var.app_sg_id]
 
   user_data = base64encode(templatefile("${path.module}/user_data.tpl", {
-    app_port = var.app_port
+    app_port                      = var.app_port
+    required_package_repo_baseurl = var.required_package_repo_baseurl
+    required_package_name         = var.required_package_name
   }))
 
   tag_specifications {
