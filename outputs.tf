@@ -13,12 +13,12 @@ output "alb_https_url" {
 }
 
 # ========================================
-# NETWORKING (DEFAULT VPC)
+# NETWORKING (VPC & SUBNETS)
 # ========================================
 
 output "vpc_id" {
-  description = "Default VPC ID"
-  value       = data.aws_vpc.default.id
+  description = "VPC ID (either default or custom)"
+  value       = local.vpc_id
 }
 
 output "alb_subnet_ids" {

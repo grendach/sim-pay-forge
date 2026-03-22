@@ -1,15 +1,37 @@
 # sim-pay-forge
 
-Payment provider POC on AWS — Terraform, single default VPC, HTTPS via ACM.
+Payment provider POC on AWS — Terraform, HTTPS via ACM. Supports both **default VPC** (current) and **custom VPC with 3 private + 3 public subnets** (future).
 
 ## Architecture
 
-- **ALB** — public, HTTPS 443, 3 selected subnets from the default VPC
+- **VPC** — default VPC (current) or custom VPC with 3 private + 3 public subnets (configurable)
+- **ALB** — public, HTTPS 443, 3 selected public subnets
 - **App** — single EC2 in ASG (nginx + Docker dependency gate), placed in private subnets when available, otherwise public fallback
 - **DB** — single EC2 (MySQL), same private-preferred / public-fallback logic
 - **SGs** — ALB ingress from `allowed_client_cidrs`, app ingress from ALB only, DB ingress from app only
 
-> Current deployment: default VPC has no private subnets → app and DB run in public subnets (`workload_network_mode = public-fallback`). Add private subnets to the VPC and re-apply to move workloads there automatically.
+> Current deployment: default VPC mode (no private subnets) → app and DB run in public subnets (`workload_network_mode = public-fallback`).
+
+## VPC Modes
+
+### Default VPC (current, `use_default_vpc = true`)
+
+Terraform discovers and uses the AWS default VPC in your account. Simplest for POC.
+
+### Custom VPC (future, `use_default_vpc = false`)
+
+Terraform creates a new VPC with:
+- 3 public subnets (10.0.1.0/24, 10.0.2.0/24, 10.0.3.0/24)
+- 3 private subnets (10.0.101.0/24, 10.0.102.0/24, 10.0.103.0/24)
+- Internet Gateway for public subnets
+
+To switch, edit `environments/dev/terraform.tfvars`:
+
+```hcl
+use_default_vpc = false
+# optional:
+custom_vpc_cidr = "10.0.0.0/16"
+```
 
 ## DNS
 
@@ -35,6 +57,15 @@ allowed_client_cidrs = [
   "185.72.187.163/32",
 ]
 ```
+
+## Destroy
+
+```bash
+./aws-infra.sh destroy
+```
+
+If using custom VPC (`use_default_vpc = false`), this will delete the VPC, subnets, IGW, and all workloads.  
+If using default VPC (`use_default_vpc = true`), this will delete ALB, app ASG, DB EC2, and SGs only — the default VPC itself is left intact.
 
 ## Diagrams
 

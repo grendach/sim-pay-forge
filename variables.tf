@@ -18,6 +18,19 @@ variable "region" {
   default     = "eu-west-1"  # Wrocław optimal
 }
 
+# VPC SELECTION
+variable "use_default_vpc" {
+  type        = bool
+  description = "Use AWS default VPC (true) or create custom VPC with 3 private + 3 public subnets (false)"
+  default     = true
+}
+
+variable "custom_vpc_cidr" {
+  type        = string
+  description = "CIDR block for custom VPC (only used if use_default_vpc = false)"
+  default     = "10.0.0.0/16"
+}
+
 # SECURITY: Finite IP list for audit compliance
 variable "allowed_client_cidrs" {
   type        = list(string)
