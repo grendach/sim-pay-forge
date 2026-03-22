@@ -1,126 +1,49 @@
 # sim-pay-forge
 
-Secure Payment Provider POC on AWS using Terraform. The configuration prefers private subnets for app and DB workloads when they exist in the default VPC, but the current AWS account has no private subnets there, so app EC2 and DB EC2 are currently deployed in selected public subnets.
+Payment provider POC on AWS — Terraform, single default VPC, HTTPS via ACM.
 
 ## Architecture
-VPC: default VPC with 3 discovered public subnets for ALB
 
-Current network mode: public fallback for workloads because no private subnets exist in the default VPC
+- **ALB** — public, HTTPS 443, 3 selected subnets from the default VPC
+- **App** — single EC2 in ASG (nginx + Docker dependency gate), placed in private subnets when available, otherwise public fallback
+- **DB** — single EC2 (MySQL), same private-preferred / public-fallback logic
+- **SGs** — ALB ingress from `allowed_client_cidrs`, app ingress from ALB only, DB ingress from app only
 
-ALB: HTTPS from allowed IPs only
+> Current deployment: default VPC has no private subnets → app and DB run in public subnets (`workload_network_mode = public-fallback`). Add private subnets to the VPC and re-apply to move workloads there automatically.
 
-ASG: single app EC2 instance in ASG with dependency-gated startup
+## DNS
 
-EC2 MySQL: single DB EC2 with app-only access in selected default-VPC subnet
+The hosted zone `grendach.dev` is managed in **Cloudflare**. After each deploy, copy `alb_dns_name` from `terraform output` and update the CNAME record in Cloudflare manually:
 
-Security: Principle of least privilege SGs
-
-Workload subnet behavior: if private subnets are later added to the default VPC, Terraform will place app and DB there; in the current setup it falls back to public subnets and reports `workload_network_mode = public-fallback`
-
-Ingress allowlist behavior: ALB ingress is driven by `allowed_client_cidrs`, which accepts one or many CIDR blocks. The current dev example keeps `0.0.0.0/0` enabled for the POC, but you can switch to a finite list such as `185.72.187.163/32` or any office/VPN ranges.
-
-Diagram: see docs/poc-architecture.md
-
-Python diagram generator (PNG):
-
-```bash
-brew install graphviz
-python3 -m pip install diagrams
-python3 docs/generate_infra_diagram.py
+```
+altm-dev.grendach.dev  CNAME  <alb_dns_name>
 ```
 
-Audit-focused diagram generator (PNG):
+The ACM certificate for `altm-dev.grendach.dev` uses DNS validation — add the validation CNAME from `certificate_validation_records` output to Cloudflare once, then it auto-renews.
+
+## Deploy
 
 ```bash
-python3 docs/generate_audit_diagram.py
+./aws-infra.sh apply
+terraform output   # copy alb_dns_name → update Cloudflare CNAME
 ```
 
-Audit contingency notes: see docs/audit-contingency.md
+Restrict ingress in `environments/dev/terraform.tfvars` when needed:
 
-## Usage
-
-- Ensure AWS CLI configured
-```bash
-aws configure list
-aws sts get-caller-identity  # Verify account/region
-```
-
-- Create S3 state bucket + DynamoDB lock (one-time)
-```bash
-aws s3 mb s3://sim-pay-forge-terraform-state --region eu-central-1
-aws dynamodb create-table \
-  --table-name terraform-locks \
-  --attribute-definitions AttributeName=LockID,AttributeType=S \
-  --key-schema AttributeName=LockID,KeyType=HASH \
-  --provisioned-throughput ReadCapacityUnits=5,WriteCapacityUnits=5 \
-  --region eu-central-1
-```
-## DEV env
-```bash
-cd environments/dev
-```
-
-- Copy & customize config
-```bash
-cp ../terraform.tfvars.example terraform.tfvars
-```
-- Edit terraform.tfvars if needed
-
-- Example ALB ingress allowlist override
 ```hcl
 allowed_client_cidrs = [
-  "0.0.0.0/0",
   "185.72.187.163/32",
 ]
 ```
 
-- Terraform workflow
+## Diagrams
+
 ```bash
-# Initialize (downloads providers, modules)
-terraform init
-
-# Validate syntax
-terraform validate
-
-# Dry-run (review resources)
-terraform plan -out=tfplan
-
-# Deploy (type 'yes')
-terraform apply "tfplan"
-
-# View outputs
-terraform output
-# Copy alb_dns_name or alb_https_url
-# Check alb_subnet_ids, workload_subnet_ids, and workload_network_mode
+# macOS prereqs (one-time)
+brew install graphviz && python3 -m pip install diagrams
+# generate → docs/poc-architecture-python.png
+python3 docs/generate_infra_diagram.py
 ```
-- Verify deployment
-```bash
-# Check ALB DNS (from terraform output)
-curl -k https://sim-pay-forge-dev-xxx.elb.eu-central-1.amazonaws.com
-# → <h1>🛒 Payment Provider Active</h1>
-
-# AWS Console
-aws ec2 describe-instances --filters "Name=tag:Name,Values=sim-pay-forge-dev-app-asg*"
-aws elbv2 describe-load-balancers --names sim-pay-forge-dev-alb
-```
-
-## Expected Resources Created
-
-✅ Default VPC discovery
-
-✅ 3 selected public subnets for ALB placement
-
-✅ App and DB placement in private subnets when available, otherwise public-subnet fallback
-
-✅ Current account uses public-subnet fallback because the default VPC has no private subnets
-
-✅ ALB (HTTPS:443 → allowed IPs only)
-
-✅ ASG (1x t3.micro, ALB health checks)
-
-✅ EC2 MySQL (single instance)
-
-✅ Security Groups (least privilege)
 
 ## Troubleshooting
 ❌ "No ACm cert": Create free cert in AWS Console (public domain or wildcard)
@@ -130,5 +53,5 @@ aws elbv2 describe-load-balancers --names sim-pay-forge-dev-alb
 
 ## Cleanup
 ```
-terraform destroy
+./aws-infra.sh destroy
 ```
