@@ -1,6 +1,7 @@
 name                          = "sim-pay-forge"
 environment                   = "dev"
 region                        = "eu-central-1"
+use_default_vpc               = true
 
 # Default open ingress for POC. Multiple CIDR blocks are supported here.
 allowed_client_cidrs = [

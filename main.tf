@@ -45,7 +45,7 @@ data "aws_subnets" "private" {
 
 check "default_vpc_has_at_least_three_public_subnets" {
   assert {
-    condition     = !var.use_default_vpc || length(data.aws_subnets.public[0].ids) >= 3
+    condition     = var.use_default_vpc ? try(length(data.aws_subnets.public[0].ids), 0) >= 3 : true
     error_message = "Default VPC must have at least 3 public subnets for this POC."
   }
 }

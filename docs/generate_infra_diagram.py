@@ -24,7 +24,7 @@ from diagrams.onprem.network import Internet
 
 with Diagram(
     "sim-pay-forge (dev) — eu-central-1",
-    filename="docs/poc-architecture-python",
+    filename="docs/poc-architecture",
     show=False,
     direction="TB",
 ):

@@ -2,11 +2,11 @@ locals {
   name_prefix = "${var.name}-${var.environment}"
 
   # VPC selection: default or custom
-  vpc_id = var.use_default_vpc ? data.aws_vpc.default[0].id : aws_vpc.custom[0].id
+  vpc_id = var.use_default_vpc ? try(data.aws_vpc.default[0].id, null) : aws_vpc.custom[0].id
 
   # Subnet selection based on VPC mode
-  public_subnet_ids = var.use_default_vpc ? data.aws_subnets.public[0].ids : aws_subnet.public[*].id
-  private_subnet_ids = var.use_default_vpc ? data.aws_subnets.private[0].ids : aws_subnet.private[*].id
+  public_subnet_ids  = var.use_default_vpc ? try(data.aws_subnets.public[0].ids, []) : aws_subnet.public[*].id
+  private_subnet_ids = var.use_default_vpc ? try(data.aws_subnets.private[0].ids, []) : aws_subnet.private[*].id
 
   selected_public_subnet_ids = var.use_default_vpc ? slice(sort(local.public_subnet_ids), 0, 3) : aws_subnet.public[*].id
 
