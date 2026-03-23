@@ -1,7 +1,7 @@
-name                          = "sim-pay-forge"
-environment                   = "dev"
-region                        = "eu-central-1"
-use_default_vpc               = true
+name            = "sim-pay-forge"
+environment     = "dev"
+region          = "eu-central-1"
+use_default_vpc = true
 
 # Default open ingress for POC. Multiple CIDR blocks are supported here.
 allowed_client_cidrs = [
@@ -11,11 +11,11 @@ allowed_client_cidrs = [
 
 # AMIs
 # Leave db_ami_id unset to use the latest Amazon Linux 2023 AMI from AWS SSM for the selected region.
-mysql_root_password           = "ChangeMe123!"
+mysql_root_password = "ChangeMe123!"
 
 # Sizing
-app_instance_type             = "t3.micro"
-db_instance_type              = "t3.micro"
+app_instance_type = "t3.micro"
+db_instance_type  = "t3.micro"
 
 # ACM Certificate (manual DNS validation)
 certificate_validation_method = "DNS"

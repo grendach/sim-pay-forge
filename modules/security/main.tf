@@ -44,7 +44,7 @@ resource "aws_security_group" "app" {
 
   # Ingress: allow HTTP from ALB
   ingress {
-    from_port       = var.app_port   # usually 80
+    from_port       = var.app_port # usually 80
     to_port         = var.app_port
     protocol        = "tcp"
     security_groups = [aws_security_group.alb.id]
@@ -73,7 +73,7 @@ resource "aws_security_group" "db" {
 
   # Ingress: allow MySQL from App SG only
   ingress {
-    from_port       = var.db_port   # usually 3306
+    from_port       = var.db_port # usually 3306
     to_port         = var.db_port
     protocol        = "tcp"
     security_groups = [aws_security_group.app.id]

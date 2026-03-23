@@ -55,8 +55,8 @@ check "default_vpc_has_at_least_three_public_subnets" {
 # ========================================
 
 resource "aws_vpc" "custom" {
-  count            = var.use_default_vpc ? 0 : 1
-  cidr_block       = var.custom_vpc_cidr
+  count                = var.use_default_vpc ? 0 : 1
+  cidr_block           = var.custom_vpc_cidr
   enable_dns_hostnames = true
   enable_dns_support   = true
 
@@ -67,8 +67,8 @@ resource "aws_vpc" "custom" {
 }
 
 resource "aws_internet_gateway" "custom" {
-  count   = var.use_default_vpc ? 0 : 1
-  vpc_id  = aws_vpc.custom[0].id
+  count  = var.use_default_vpc ? 0 : 1
+  vpc_id = aws_vpc.custom[0].id
 
   tags = merge(
     local.common_tags,
@@ -96,8 +96,8 @@ resource "aws_route_table" "public" {
   vpc_id = aws_vpc.custom[0].id
 
   route {
-    cidr_block      = "0.0.0.0/0"
-    gateway_id      = aws_internet_gateway.custom[0].id
+    cidr_block = "0.0.0.0/0"
+    gateway_id = aws_internet_gateway.custom[0].id
   }
 
   tags = merge(
@@ -110,6 +110,29 @@ resource "aws_route_table_association" "public" {
   count          = var.use_default_vpc ? 0 : 3
   subnet_id      = aws_subnet.public[count.index].id
   route_table_id = aws_route_table.public[0].id
+}
+
+# NAT for private subnet egress in custom VPC mode
+resource "aws_eip" "nat" {
+  count  = var.use_default_vpc ? 0 : 1
+  domain = "vpc"
+
+  tags = merge(
+    local.common_tags,
+    { Name = "${local.name_prefix}-nat-eip" }
+  )
+}
+
+resource "aws_nat_gateway" "custom" {
+  count         = var.use_default_vpc ? 0 : 1
+  allocation_id = aws_eip.nat[0].id
+  subnet_id     = aws_subnet.public[0].id
+  depends_on    = [aws_internet_gateway.custom]
+
+  tags = merge(
+    local.common_tags,
+    { Name = "${local.name_prefix}-nat" }
+  )
 }
 
 # 3 Private subnets for custom VPC
@@ -130,6 +153,11 @@ resource "aws_subnet" "private" {
 resource "aws_route_table" "private" {
   count  = var.use_default_vpc ? 0 : 1
   vpc_id = aws_vpc.custom[0].id
+
+  route {
+    cidr_block     = "0.0.0.0/0"
+    nat_gateway_id = aws_nat_gateway.custom[0].id
+  }
 
   tags = merge(
     local.common_tags,
@@ -161,14 +189,14 @@ module "security" {
 # ========================================
 
 module "acm_certificate" {
-  source                      = "./modules/acm-certificate"
-  name                        = local.name_prefix
-  domain_name                 = var.certificate_domain_name
-  subject_alternative_names   = var.certificate_sans
-  validation_method           = var.certificate_validation_method
-  create_validation_records   = var.create_dns_validation_records
-  route53_zone_id             = var.route53_zone_id
-  wait_for_validation         = true
+  source                    = "./modules/acm-certificate"
+  name                      = local.name_prefix
+  domain_name               = var.certificate_domain_name
+  subject_alternative_names = var.certificate_sans
+  validation_method         = var.certificate_validation_method
+  create_validation_records = var.create_dns_validation_records
+  route53_zone_id           = var.route53_zone_id
+  wait_for_validation       = true
 }
 
 # ========================================
@@ -176,14 +204,14 @@ module "acm_certificate" {
 # ========================================
 
 module "alb" {
-  source             = "./modules/alb"
-  name               = local.name_prefix
-  vpc_id             = local.vpc_id
-  public_subnet_ids  = local.selected_public_subnet_ids
-  alb_sg_id          = module.security.alb_sg_id
-  target_group_port  = var.app_port
-  certificate_arn    = module.acm_certificate.certificate_arn
-  environment        = var.environment
+  source            = "./modules/alb"
+  name              = local.name_prefix
+  vpc_id            = local.vpc_id
+  public_subnet_ids = local.selected_public_subnet_ids
+  alb_sg_id         = module.security.alb_sg_id
+  target_group_port = var.app_port
+  certificate_arn   = module.acm_certificate.certificate_arn
+  environment       = var.environment
 }
 
 # ========================================
@@ -191,18 +219,18 @@ module "alb" {
 # ========================================
 
 module "app_asg" {
-  source             = "./modules/app-asg"
-  name               = local.name_prefix
-  vpc_id             = local.vpc_id
+  source = "./modules/app-asg"
+  name   = local.name_prefix
+  vpc_id = local.vpc_id
 
   # Prefer private subnets for workloads; fallback to selected public subnets when default VPC has none.
   private_subnet_ids  = local.selected_workload_subnet_ids
   associate_public_ip = local.workload_associate_public_ip
 
-  app_sg_id          = module.security.app_sg_id
-  instance_type      = var.app_instance_type
-  alb_tg_arn         = module.alb.target_group_arn
-  app_port           = var.app_port
+  app_sg_id                     = module.security.app_sg_id
+  instance_type                 = var.app_instance_type
+  alb_tg_arn                    = module.alb.target_group_arn
+  app_port                      = var.app_port
   required_package_repo_baseurl = var.required_package_repo_baseurl
   required_package_name         = var.required_package_name
 }
@@ -212,13 +240,13 @@ module "app_asg" {
 # ========================================
 
 module "db_ec2" {
-  source        = "./modules/db-ec2"
-  name          = local.name_prefix
-  subnet_id     = local.selected_workload_subnet_ids[0]
+  source              = "./modules/db-ec2"
+  name                = local.name_prefix
+  subnet_id           = local.selected_workload_subnet_ids[0]
   associate_public_ip = local.workload_associate_public_ip
 
-  db_sg_id      = module.security.db_sg_id
-  instance_type = var.db_instance_type
-  db_ami_id     =  var.db_ami_id
+  db_sg_id            = module.security.db_sg_id
+  instance_type       = var.db_instance_type
+  db_ami_id           = var.db_ami_id
   mysql_root_password = var.mysql_root_password
 }

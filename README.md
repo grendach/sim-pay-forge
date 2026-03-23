@@ -66,6 +66,7 @@ Terraform creates a new VPC with:
 - 3 public subnets (10.0.1.0/24, 10.0.2.0/24, 10.0.3.0/24)
 - 3 private subnets (10.0.101.0/24, 10.0.102.0/24, 10.0.103.0/24)
 - Internet Gateway for public subnets
+- NAT Gateway + default route from private route table for outbound package/repo access from private app/db instances
 
 To switch, edit `environments/dev/terraform.tfvars`:
 

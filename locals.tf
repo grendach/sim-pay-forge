@@ -10,17 +10,17 @@ locals {
 
   selected_public_subnet_ids = var.use_default_vpc ? slice(sort(local.public_subnet_ids), 0, 3) : aws_subnet.public[*].id
 
-  has_private_subnets = length(local.private_subnet_ids) > 0
-  selected_private_subnet_ids = local.has_private_subnets ? slice(sort(local.private_subnet_ids), 0, min(3, length(local.private_subnet_ids))) : []
+  has_private_subnets          = length(local.private_subnet_ids) > 0
+  selected_private_subnet_ids  = local.has_private_subnets ? slice(sort(local.private_subnet_ids), 0, min(3, length(local.private_subnet_ids))) : []
   selected_workload_subnet_ids = local.has_private_subnets ? local.selected_private_subnet_ids : local.selected_public_subnet_ids
   workload_associate_public_ip = local.has_private_subnets ? false : true
 
   common_tags = {
-    Project       = var.name
-    Environment   = var.environment
-    Purpose       = "SimPayForge-Payment-POC"
-    ManagedBy     = "Terraform"
-    AuditDate     = "2026-03-17"
-    Owner         = "Dmytro Grendach"
+    Project     = var.name
+    Environment = var.environment
+    Purpose     = "${var.name}-${var.environment}-POC"
+    ManagedBy   = "Terraform"
+    AuditDate   = "2026-03-23"
+    Owner       = "Dmytro Grendach"
   }
 }

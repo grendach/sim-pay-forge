@@ -13,8 +13,8 @@ variable "subject_alternative_names" {
 }
 
 variable "validation_method" {
-  type        = string
-  default     = "EMAIL"
+  type    = string
+  default = "EMAIL"
   validation {
     condition     = contains(["EMAIL", "DNS"], var.validation_method)
     error_message = "Must be EMAIL or DNS."
