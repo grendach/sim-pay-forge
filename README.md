@@ -1,134 +1,96 @@
 # sim-pay-forge
 
-Secure Payment Provider POC on AWS using Terraform. The configuration prefers private subnets for app and DB workloads when they exist in the default VPC, but the current AWS account has no private subnets there, so app EC2 and DB EC2 are currently deployed in selected public subnets.
+Payment provider POC on AWS — Terraform, HTTPS via ACM. Supports both **default VPC** (current) and **custom VPC with 3 private + 3 public subnets** (future).
 
 ## Architecture
-VPC: default VPC with 3 discovered public subnets for ALB
+![POC Infrastructure Diagram](docs/poc-architecture.png)
 
-Current network mode: public fallback for workloads because no private subnets exist in the default VPC
+- **POC requirement (current mode)** — 3 subnets from the AWS default VPC are used for the deployment.
+- **VPC (future-ready mode)** — you can switch to a custom VPC with 3 public + 3 private subnets (`use_default_vpc = false`), which is the more proper production pattern.
+- **ALB** — public, HTTPS 443, attached to 3 selected public subnets.
+- **App** — single EC2 in ASG; private-preferred placement with public fallback when no private subnets exist.
+- **DB** — single EC2 (MySQL); same subnet-selection behavior as app.
+- **SGs** — ALB ingress from `allowed_client_cidrs`, app ingress from ALB only, DB ingress from app only.
 
-ALB: HTTPS from allowed IPs only
+> Current deployment: default VPC mode (no private subnets) → app and DB run in public subnets (`workload_network_mode = public-fallback`).
 
-ASG: single app EC2 instance in ASG with dependency-gated startup
-
-EC2 MySQL: single DB EC2 with app-only access in selected default-VPC subnet
-
-Security: Principle of least privilege SGs
-
-Workload subnet behavior: if private subnets are later added to the default VPC, Terraform will place app and DB there; in the current setup it falls back to public subnets and reports `workload_network_mode = public-fallback`
-
-Ingress allowlist behavior: ALB ingress is driven by `allowed_client_cidrs`, which accepts one or many CIDR blocks. The current dev example keeps `0.0.0.0/0` enabled for the POC, but you can switch to a finite list such as `185.72.187.163/32` or any office/VPN ranges.
-
-Diagram: see docs/poc-architecture.md
-
-Python diagram generator (PNG):
+## Deploy
 
 ```bash
-brew install graphviz
-python3 -m pip install diagrams
-python3 docs/generate_infra_diagram.py
+./aws-infra.sh apply
+terraform output   # copy alb_dns_name → update Cloudflare CNAME
 ```
 
-Audit-focused diagram generator (PNG):
+Restrict ingress in `environments/dev/terraform.tfvars` when needed:
 
-```bash
-python3 docs/generate_audit_diagram.py
-```
-
-Audit contingency notes: see docs/audit-contingency.md
-
-## Usage
-
-- Ensure AWS CLI configured
-```bash
-aws configure list
-aws sts get-caller-identity  # Verify account/region
-```
-
-- Create S3 state bucket + DynamoDB lock (one-time)
-```bash
-aws s3 mb s3://sim-pay-forge-terraform-state --region eu-central-1
-aws dynamodb create-table \
-  --table-name terraform-locks \
-  --attribute-definitions AttributeName=LockID,AttributeType=S \
-  --key-schema AttributeName=LockID,KeyType=HASH \
-  --provisioned-throughput ReadCapacityUnits=5,WriteCapacityUnits=5 \
-  --region eu-central-1
-```
-## DEV env
-```bash
-cd environments/dev
-```
-
-- Copy & customize config
-```bash
-cp ../terraform.tfvars.example terraform.tfvars
-```
-- Edit terraform.tfvars if needed
-
-- Example ALB ingress allowlist override
 ```hcl
 allowed_client_cidrs = [
-  "0.0.0.0/0",
   "185.72.187.163/32",
 ]
 ```
 
-- Terraform workflow
-```bash
-# Initialize (downloads providers, modules)
-terraform init
-
-# Validate syntax
-terraform validate
-
-# Dry-run (review resources)
-terraform plan -out=tfplan
-
-# Deploy (type 'yes')
-terraform apply "tfplan"
-
-# View outputs
-terraform output
-# Copy alb_dns_name or alb_https_url
-# Check alb_subnet_ids, workload_subnet_ids, and workload_network_mode
-```
-- Verify deployment
-```bash
-# Check ALB DNS (from terraform output)
-curl -k https://sim-pay-forge-dev-xxx.elb.eu-central-1.amazonaws.com
-# → <h1>🛒 Payment Provider Active</h1>
-
-# AWS Console
-aws ec2 describe-instances --filters "Name=tag:Name,Values=sim-pay-forge-dev-app-asg*"
-aws elbv2 describe-load-balancers --names sim-pay-forge-dev-alb
-```
-
-## Expected Resources Created
-
-✅ Default VPC discovery
-
-✅ 3 selected public subnets for ALB placement
-
-✅ App and DB placement in private subnets when available, otherwise public-subnet fallback
-
-✅ Current account uses public-subnet fallback because the default VPC has no private subnets
-
-✅ ALB (HTTPS:443 → allowed IPs only)
-
-✅ ASG (1x t3.micro, ALB health checks)
-
-✅ EC2 MySQL (single instance)
-
-✅ Security Groups (least privilege)
+Terraform state locking: this project uses DynamoDB table `terraform-locks` (configured in `environments/dev/backend.hcl`) to prevent concurrent `plan/apply/destroy` runs against the same state.
 
 ## Troubleshooting
 ❌ "No ACm cert": Create free cert in AWS Console (public domain or wildcard)
+
 ❌ "Invalid AMI": aws ec2 describe-images --owners amazon --region eu-central-1
+
 ❌ State locked: aws dynamodb get-item --table-name terraform-locks --key '{"LockID":{"S":"your-lock"}}'
+
 ❌ Permissions: Attach AdministratorAccess policy temporarily
 
 ## Cleanup
 ```
-terraform destroy
+./aws-infra.sh destroy
+```
+If using custom VPC (`use_default_vpc = false`), this will delete the VPC, subnets, IGW, and all workloads.  
+If using default VPC (`use_default_vpc = true`), this will delete ALB, app ASG, DB EC2, and SGs only — the default VPC itself is left intact.
+
+
+## Startup Dependency (POC)
+
+Per POC requirement, instance startup uses a dependency gate in user-data: if a required package is not installed, the application does not start.
+
+Current implementation uses Docker repository bootstrap and installs `docker-ce` (instead of the placeholder `example.com` package). If package installation fails, startup exits before nginx/application start.
+
+## VPC Modes
+
+### Default VPC (current, `use_default_vpc = true`)
+
+Terraform discovers and uses the AWS default VPC in your account. Simplest for POC.
+
+### Custom VPC (future, `use_default_vpc = false`)
+
+Terraform creates a new VPC with:
+- 3 public subnets (10.0.1.0/24, 10.0.2.0/24, 10.0.3.0/24)
+- 3 private subnets (10.0.101.0/24, 10.0.102.0/24, 10.0.103.0/24)
+- Internet Gateway for public subnets
+- NAT Gateway + default route from private route table for outbound package/repo access from private app/db instances
+
+To switch, edit `environments/dev/terraform.tfvars`:
+
+```hcl
+use_default_vpc = false
+# optional:
+custom_vpc_cidr = "10.0.0.0/16"
+```
+
+## DNS
+
+The hosted zone `grendach.dev` is managed in **Cloudflare**. After each deploy, copy `alb_dns_name` from `terraform output` and update the CNAME record in Cloudflare manually:
+
+```
+altm-dev.grendach.dev  CNAME  <alb_dns_name>
+```
+
+The ACM certificate for `altm-dev.grendach.dev` uses DNS validation — add the validation CNAME from `certificate_validation_records` output to Cloudflare once, then it auto-renews.
+
+## Diagrams
+
+```bash
+# macOS prereqs (one-time)
+brew install graphviz && python3 -m pip install diagrams
+# generate → docs/poc-architecture.png
+python3 docs/generate_infra_diagram.py
 ```

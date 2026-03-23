@@ -15,7 +15,7 @@ Output:
 
 from diagrams import Cluster, Diagram, Edge
 from diagrams.aws.compute import EC2AutoScaling, EC2Instance
-from diagrams.aws.network import ALB, InternetGateway, VPC
+from diagrams.aws.network import ALB
 from diagrams.aws.security import CertificateManager
 from diagrams.generic.network import Firewall
 from diagrams.onprem.compute import Server
@@ -23,38 +23,37 @@ from diagrams.onprem.network import Internet
 
 
 with Diagram(
-    "POC Infrastructure (Python)",
-    filename="docs/poc-architecture-python",
+    "sim-pay-forge (dev) — eu-central-1",
+    filename="docs/poc-architecture",
     show=False,
     direction="TB",
 ):
-    internet = Internet("Internet Clients")
-    secureweb = Server("secureweb.com")
-    acm = CertificateManager("ACM Cert")
+    internet = Internet("Internet\n0.0.0.0/0")
+    secureweb = Server("secureweb.com\nHTTPS startup check")
 
-    with Cluster("AWS Account"):
-        igw = InternetGateway("Internet GW")
+    with Cluster("Cloudflare — grendach.dev"):
+        cf_dns = Server("altm-dev.grendach.dev\nCNAME → ALB DNS (manual)")
 
-        with Cluster("Default VPC"):
-            vpc = VPC("Default VPC")
+    with Cluster("AWS — eu-central-1"):
+        acm = CertificateManager("ACM\naltm-dev.grendach.dev\n*.altm-dev.grendach.dev")
 
-            with Cluster("Public Subnet A (ALB)"):
-                alb = ALB("Public ALB\nHTTPS 443")
+        with Cluster("Default VPC — 3 selected public subnets"):
 
-            with Cluster("Public Subnet B (current app placement)"):
-                app_asg = EC2AutoScaling("App ASG\nEC2 Linux\npublic-fallback active")
+            with Cluster("ALB layer"):
+                alb = ALB("sim-pay-forge-dev-alb\nHTTPS 443 / HTTP 80")
+                sg_alb = Firewall("sim-pay-forge-dev-alb-sg\nIN  TCP 80,443 ← 0.0.0.0/0\nOUT ALL  → 0.0.0.0/0")
 
-            with Cluster("Public Subnet C (current db placement)"):
-                db = EC2Instance("MySQL EC2\npublic-fallback active")
+            with Cluster("App layer  (public subnet — no private subnets in VPC)"):
+                app_asg = EC2AutoScaling("sim-pay-forge-dev-app-asg\nt3.micro | AL2023 | nginx\ndocker-ce installed on boot")
+                sg_app = Firewall("sim-pay-forge-dev-app-sg\nIN  TCP 80   ← ALB SG only\nOUT TCP 443 → 0.0.0.0/0")
 
-            fallback = Server("Current state:\nno private subnets in default VPC\napp/db use public subnets\nIf private subnets are added later, workloads move there")
+            with Cluster("DB layer  (public subnet — no private subnets in VPC)"):
+                db = EC2Instance("sim-pay-forge-dev-db\nt3.micro | AL2023 | MySQL 8")
+                sg_db = Firewall("sim-pay-forge-dev-db-sg\nIN  TCP 3306 ← App SG only\nOUT TCP 443 → 0.0.0.0/0")
 
-            sg_alb = Firewall("SG ALB\nfinite inbound CIDRs")
-            sg_app = Firewall("SG App\nallow from ALB")
-            sg_db = Firewall("SG DB\nallow from App")
-
-    internet >> Edge(label="HTTPS") >> alb
-    acm >> alb
+    internet >> Edge(label="HTTPS 443") >> alb
+    cf_dns >> Edge(label="CNAME") >> alb
+    acm >> Edge(label="TLS attached") >> alb
     alb >> Edge(label="HTTP 80") >> app_asg
     app_asg >> Edge(label="MySQL 3306") >> db
     app_asg >> Edge(label="HTTPS 443") >> secureweb
@@ -62,7 +61,3 @@ with Diagram(
     sg_alb - alb
     sg_app - app_asg
     sg_db - db
-    fallback - app_asg
-    fallback - db
-
-    igw - vpc

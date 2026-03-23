@@ -13,12 +13,12 @@ output "alb_https_url" {
 }
 
 # ========================================
-# NETWORKING (DEFAULT VPC)
+# NETWORKING (VPC & SUBNETS)
 # ========================================
 
 output "vpc_id" {
-  description = "Default VPC ID"
-  value       = data.aws_vpc.default.id
+  description = "VPC ID (either default or custom)"
+  value       = local.vpc_id
 }
 
 output "alb_subnet_ids" {
@@ -95,13 +95,13 @@ output "db_private_ip" {
 output "deployed_resources_summary" {
   description = "Summary of deployed resources"
   value = {
-    vpc             = 1
-    alb_subnets     = length(local.selected_public_subnet_ids)
+    vpc              = 1
+    alb_subnets      = length(local.selected_public_subnet_ids)
     workload_subnets = length(local.selected_workload_subnet_ids)
-    alb             = 1
-    asg             = 1
-    db_instance     = 1
-    security_groups = 3
-    certificate     = 1
+    alb              = 1
+    asg              = 1
+    db_instance      = 1
+    security_groups  = 3
+    certificate      = 1
   }
 }

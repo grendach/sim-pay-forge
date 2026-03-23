@@ -14,8 +14,21 @@ variable "environment" {
 }
 
 variable "region" {
+  type    = string
+  default = "eu-west-1" # Wrocław optimal
+}
+
+# VPC SELECTION
+variable "use_default_vpc" {
+  type        = bool
+  description = "Use AWS default VPC (true) or create custom VPC with 3 private + 3 public subnets (false)"
+  default     = true
+}
+
+variable "custom_vpc_cidr" {
   type        = string
-  default     = "eu-west-1"  # Wrocław optimal
+  description = "CIDR block for custom VPC (only used if use_default_vpc = false)"
+  default     = "10.0.0.0/16"
 }
 
 # SECURITY: Finite IP list for audit compliance
@@ -34,8 +47,8 @@ variable "db_ami_id" {
 }
 
 variable "app_instance_type" {
-  type        = string
-  default     = "t3.micro"
+  type    = string
+  default = "t3.micro"
 }
 
 variable "required_package_repo_baseurl" {
@@ -51,8 +64,8 @@ variable "required_package_name" {
 }
 
 variable "db_instance_type" {
-  type        = string
-  default     = "t3.small"
+  type    = string
+  default = "t3.small"
 }
 
 # Service ports
@@ -86,8 +99,8 @@ variable "certificate_sans" {
 }
 
 variable "certificate_validation_method" {
-  type        = string
-  default     = "EMAIL"
+  type    = string
+  default = "EMAIL"
   validation {
     condition     = contains(["EMAIL", "DNS"], var.certificate_validation_method)
     error_message = "Must be EMAIL or DNS."
@@ -108,11 +121,11 @@ variable "route53_zone_id" {
 
 # Public subnet CIDRs (customize if needed)
 variable "public_subnet_cidrs" {
-  type        = list(string)
-  default     = ["10.0.1.0/24", "10.0.2.0/24"]
+  type    = list(string)
+  default = ["10.0.1.0/24", "10.0.2.0/24"]
 }
 
 variable "private_subnet_cidrs" {
-  type        = list(string)
-  default     = ["10.0.3.0/24", "10.0.4.0/24"]
+  type    = list(string)
+  default = ["10.0.3.0/24", "10.0.4.0/24"]
 }

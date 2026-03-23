@@ -3,7 +3,7 @@
 set -euo pipefail
 
 # -------------------------------
-# Usage: ./deploy.sh <action>
+# Usage: ./aws-infra.sh <action>
 # <action> = apply | destroy
 # -------------------------------
 
